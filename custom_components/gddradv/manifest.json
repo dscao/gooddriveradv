@@ -1,0 +1,10 @@
+{
+  "domain": "gddradv",
+  "name": "GoodDriver",
+  "version": "1.0.0",
+  "documentation": "https://github.com/dscao/gooddriveradv",
+  "dependencies": [
+    "zone"
+  ],
+  "codeowners": ["@dscao"]
+}
