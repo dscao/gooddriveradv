@@ -27,9 +27,9 @@ sensor:
   - platform: template
     sensors:
       since_last_carstop1:
-        friendly_name: 小汽车胎压S版停车时长
+        friendly_name: 优驾胎压S版停车时长
         value_template: >-
-          {% set stop_time = as_timestamp(now()) - as_timestamp(state_attr('device_tracker.gddr_gooddriver1', 'statustime')) %}
+          {% set stop_time = as_timestamp(now()) - as_timestamp(state_attr('device_tracker.gddr_you_jia_tai_ya_sban', 'statustime')) %}
           {% set days = (stop_time // (60 * 60 * 24)) %}
           {% set weeks = (days// 7) %}
           {% set hours = (stop_time// (60 * 60)) - days * 24 %}
@@ -41,7 +41,7 @@ sensor:
             {{-'{}{}{}'.format(value,name,end) if value | int > 0 else''}}
           {%- endmacro %}
           {% set text = [ phrase(weeks,'周'),phrase(days,'天'), phrase(hours,'小时'), phrase(minutes,'分钟') ] | select('!=','') | list | join('') %}
-          {% if state_attr('device_tracker.gddr_gooddriver1', 'status') == "车辆熄火" %}
+          {% if state_attr('device_tracker.gddr_you_jia_tai_ya_sban', 'status') == "车辆熄火" %}
             {{ text }}
           {% else %}
             运行中
@@ -49,9 +49,9 @@ sensor:
   - platform: template
     sensors:
       since_last_carstop2:
-        friendly_name: 小汽车高级版停车时长
+        friendly_name: 优驾高级版停车时长
         value_template: >-
-          {% set stop_time = as_timestamp(now()) - as_timestamp(state_attr('device_tracker.gddr_gooddriver2', 'statustime')) %}
+          {% set stop_time = as_timestamp(now()) - as_timestamp(state_attr('device_tracker.gddr_you_jia_gao_ji_ban', 'statustime')) %}
           {% set days = (stop_time // (60 * 60 * 24)) %}
           {% set weeks = (days// 7) %}
           {% set hours = (stop_time// (60 * 60)) - days * 24 %}
@@ -63,7 +63,7 @@ sensor:
             {{-'{}{}{}'.format(value,name,end) if value | int > 0 else''}}
           {%- endmacro %}
           {% set text = [ phrase(weeks,'周'),phrase(days,'天'), phrase(hours,'小时'), phrase(minutes,'分钟') ] | select('!=','') | list | join('') %}
-          {% if state_attr('device_tracker.gddr_gooddriver2', 'status') == "车辆熄火" %}
+          {% if state_attr('device_tracker.gddr_you_jia_gao_ji_ban', 'status') == "车辆熄火" %}
             {{ text }}
           {% else %}
             运行中
