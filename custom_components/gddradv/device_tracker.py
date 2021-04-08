@@ -26,8 +26,9 @@ from dateutil.relativedelta import relativedelta
 import homeassistant.helpers.config_validation as cv
 import voluptuous as vol
 from homeassistant.components.sensor import PLATFORM_SCHEMA
-from requests import ReadTimeout, ConnectTimeout, HTTPError, Timeout, ConnectionError
 from datetime import timedelta
+from aiohttp.client_exceptions import ClientConnectorError
+from async_timeout import timeout
 import homeassistant.util.dt as dt_util
 from homeassistant.components import zone
 from homeassistant.components.device_tracker import PLATFORM_SCHEMA
@@ -119,7 +120,14 @@ class GddradvDeviceScanner(DeviceScanner):
         self._state = None
         self.attributes = {}
     
-        
+    def post_data(self, url, headerstr, datastr):
+        json_text = requests.post(url, headers=headerstr, data = datastr).content
+        json_text = json_text.decode('utf-8')
+        json_text = re.sub(r'\\','',json_text)
+        json_text = re.sub(r'"{','{',json_text)
+        json_text = re.sub(r'}"','}',json_text)
+        resdata = json.loads(json_text)
+        return resdata
     
     async def async_start(self, hass, interval):
         """Perform a first update and start polling at the given interval."""
@@ -148,21 +156,15 @@ class GddradvDeviceScanner(DeviceScanner):
         Data = '{\"UV_ID\":' + self._uvid + ',\"U_ID\":' + self._uid + ',\"QUERY_USAGE\":true}'
 
         try:
-            response = requests.post(self._url, headers = HEADERS, data = Data)
-        except ReadTimeout:
-            _Log.error("Connection timeout....")
-        except ConnectionError:
-            _Log.error("Connection Error....")
-        except RequestException:
-            _Log.error("Unknown Error")
-        '''_Log.info( response ) '''
-        _Log.info( response )
-        res = response.content.decode('utf-8')
-        res = re.sub(r'\\','',res)
-        res = re.sub(r'"{','{',res)
-        res = re.sub(r'}"','}',res)
-        _Log.debug(res)
-        ret = json.loads(res, strict=False)
+            async with timeout(10):                
+                ret =  await self.hass.async_add_executor_job(self.post_data, self._url, HEADERS, Data)
+                _Log.debug("请求结果: %s", ret)
+        except (
+            ClientConnectorError
+        ) as error:
+            raise UpdateFailed(error)
+        _Log.debug("Requests remaining: %s", self._url)
+        
         if self._gddrtype == "taiyas" :
             if ret['ERROR_CODE'] == 0:
                 _Log.info("请求服务器信息成功.....") 
