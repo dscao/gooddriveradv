@@ -121,14 +121,30 @@ class GddradvDeviceScanner(DeviceScanner):
         self.attributes = {}
     
     def post_data(self, url, headerstr, datastr):
-        json_text = requests.post(url, headers=headerstr, data = datastr).content
+        json_text = requests.post(url, verify=False, headers=headerstr, data = datastr).content
         json_text = json_text.decode('utf-8')
         json_text = re.sub(r'\\','',json_text)
         json_text = re.sub(r'"{','{',json_text)
         json_text = re.sub(r'}"','}',json_text)
         resdata = json.loads(json_text)
         return resdata
-    
+        
+        
+    def time_diff (timestamp):
+                result = datetime.datetime.now() - datetime.datetime.fromtimestamp(timestamp)
+                hours = int(result.seconds / 3600)
+                minutes = int(result.seconds % 3600 / 60)
+                seconds = result.seconds%3600%60
+                if result.days > 0:
+                    return("{0}天{1}小时{2}分钟".format(result.days,hours,minutes))
+                elif hours > 0:
+                    return("{0}小时{1}分钟".format(hours,minutes))
+                elif minutes > 0:
+                    return("{0}分钟{1}秒".format(minutes,seconds))
+                else:
+                    return("{0}秒".format(seconds))
+                    
+                    
     async def async_start(self, hass, interval):
         """Perform a first update and start polling at the given interval."""
         await self.async_update_info()
@@ -154,6 +170,21 @@ class GddradvDeviceScanner(DeviceScanner):
             }
 
         Data = '{\"UV_ID\":' + self._uvid + ',\"U_ID\":' + self._uid + ',\"QUERY_USAGE\":true}'
+        
+        def time_diff (timestamp):
+            result = datetime.datetime.now() - datetime.datetime.fromtimestamp(timestamp)
+            hours = int(result.seconds / 3600)
+            minutes = int(result.seconds % 3600 / 60)
+            seconds = result.seconds%3600%60
+            if result.days > 0:
+                return("{0}天{1}小时{2}分钟".format(result.days,hours,minutes))
+            elif hours > 0:
+                return("{0}小时{1}分钟".format(hours,minutes))
+            elif minutes > 0:
+                return("{0}分钟{1}秒".format(minutes,seconds))
+            else:
+                return("{0}秒".format(seconds))
+                
 
         try:
             async with timeout(10):                
@@ -173,6 +204,8 @@ class GddradvDeviceScanner(DeviceScanner):
                     status = "车辆点火"
                 elif ret['MESSAGE']['UID_STATE'] == 2:
                     status = "车辆熄火"
+                elif ret['MESSAGE']['UID_STATE'] == 3:
+                    status = "车辆离线"
                 else:
                     status = "未知"
                                    
@@ -187,6 +220,7 @@ class GddradvDeviceScanner(DeviceScanner):
                         "time": ret['MESSAGE']['UID_RECENT_PLACE']['Time'],
                         "speed": ret['MESSAGE']['UID_RECENT_PLACE']['Speed'],
                         "course": ret['MESSAGE']['UID_RECENT_PLACE']['Course'],
+                        "Parking_time": time_diff (int(time.mktime(time.strptime(ret['MESSAGE']['UID_RECENT_PLACE']['Time'], "%Y-%m-%d %H:%M:%S")))),
                         },
                     }
                 kwargs["gps"] = [
@@ -214,6 +248,7 @@ class GddradvDeviceScanner(DeviceScanner):
                         "status": status,
                         "querytime": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
                         "statustime": re.sub(r'\/','-',ret['UV_LAST_STAYTIME']), 
+                        "Parking_time": time_diff (int(time.mktime(time.strptime(re.sub(r'\/','-',ret['UV_LAST_STAYTIME']), "%Y-%m-%d %H:%M:%S")))),
                         },
                     }
                 kwargs["gps"] = [
